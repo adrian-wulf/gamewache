@@ -31,7 +31,11 @@ struct JsonRpcResponse {
     error: Option<Value>,
 }
 
-pub async fn run_mcp_stdio(state: Arc<AppState>, default_project_dir: Option<PathBuf>) -> io::Result<()> {
+pub async fn run_mcp_stdio(
+    state: Arc<AppState>,
+    remote_server: Option<String>,
+    default_project_dir: Option<PathBuf>,
+) -> io::Result<()> {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
 
@@ -53,7 +57,14 @@ pub async fn run_mcp_stdio(state: Arc<AppState>, default_project_dir: Option<Pat
             continue;
         }
 
-        let resp_result = handle_mcp_method(&state, &req.method, req.params, default_project_dir.as_deref()).await;
+        let resp_result = handle_mcp_method(
+            &state,
+            remote_server.as_deref(),
+            &req.method,
+            req.params,
+            default_project_dir.as_deref(),
+        )
+        .await;
 
         if let Some(id) = req.id {
             let resp = match resp_result {
@@ -85,6 +96,7 @@ pub async fn run_mcp_stdio(state: Arc<AppState>, default_project_dir: Option<Pat
 
 async fn handle_mcp_method(
     state: &Arc<AppState>,
+    remote_server: Option<&str>,
     method: &str,
     params: Value,
     default_dir: Option<&Path>,
@@ -111,7 +123,7 @@ async fn handle_mcp_method(
 
             let args = params.get("arguments").cloned().unwrap_or(json!({}));
 
-            let text_output = execute_tool(state, tool_name, args, default_dir).await?;
+            let text_output = execute_tool(state, remote_server, tool_name, args, default_dir).await?;
 
             Ok(json!({
                 "content": [
@@ -307,8 +319,48 @@ fn resolve_project_id(args_val: Option<&str>, default_dir: Option<&Path>) -> Str
         .to_string()
 }
 
+async fn http_get(server: &str, path_and_query: &str) -> Result<String, String> {
+    let url = format!("{}{}", server.trim_end_matches('/'), path_and_query);
+    let client = reqwest::Client::new();
+    let resp = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Błąd połączenia z VPS ({url}): {e}"))?;
+
+    if !resp.status().is_success() {
+        return Err(format!(
+            "Błąd serwera GameWache ({url}): HTTP {}",
+            resp.status()
+        ));
+    }
+
+    resp.text().await.map_err(|e| e.to_string())
+}
+
+async fn http_post_json(server: &str, path: &str, body: &Value) -> Result<String, String> {
+    let url = format!("{}{}", server.trim_end_matches('/'), path);
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(&url)
+        .json(body)
+        .send()
+        .await
+        .map_err(|e| format!("Błąd połączenia z VPS ({url}): {e}"))?;
+
+    if !resp.status().is_success() {
+        return Err(format!(
+            "Błąd serwera GameWache ({url}): HTTP {}",
+            resp.status()
+        ));
+    }
+
+    resp.text().await.map_err(|e| e.to_string())
+}
+
 async fn execute_tool(
     state: &Arc<AppState>,
+    remote_server: Option<&str>,
     name: &str,
     args: Value,
     default_dir: Option<&Path>,
@@ -316,9 +368,17 @@ async fn execute_tool(
     match name {
         "gw_query_crashes" => {
             let project_id = resolve_project_id(args["project_id"].as_str(), default_dir);
-            let scene = args["scene_name"].as_str();
             let limit = args["limit"].as_u64().unwrap_or(10) as u32;
 
+            if let Some(srv) = remote_server {
+                let mut path = format!("/api/v1/projects/{}/crashes?limit={}", project_id, limit);
+                if let Some(scene) = args["scene_name"].as_str() {
+                    path.push_str(&format!("&scene={}", scene));
+                }
+                return http_get(srv, &path).await;
+            }
+
+            let scene = args["scene_name"].as_str();
             let crashes = state
                 .db
                 .list_crashes(&project_id, scene, limit)
@@ -328,6 +388,12 @@ async fn execute_tool(
         }
         "gw_get_crash_details" => {
             let crash_id = args["crash_id"].as_i64().ok_or("Missing crash_id")?;
+
+            if let Some(srv) = remote_server {
+                let path = format!("/api/v1/crashes/{}", crash_id);
+                return http_get(srv, &path).await;
+            }
+
             let crash = state
                 .db
                 .get_crash(crash_id)
@@ -338,6 +404,12 @@ async fn execute_tool(
         }
         "gw_inspect_replay" => {
             let replay_id = args["replay_id"].as_str().ok_or("Missing replay_id")?;
+
+            if let Some(srv) = remote_server {
+                let path = format!("/api/v1/replays/{}", replay_id);
+                return http_get(srv, &path).await;
+            }
+
             let replay = state
                 .db
                 .get_replay(replay_id)
@@ -350,6 +422,11 @@ async fn execute_tool(
             let project_id = resolve_project_id(args["project_id"].as_str(), default_dir);
             let scene_name = args["scene_name"].as_str().ok_or("Missing scene_name")?;
 
+            if let Some(srv) = remote_server {
+                let path = format!("/api/v1/projects/{}/spatial_hotspots?scene={}", project_id, scene_name);
+                return http_get(srv, &path).await;
+            }
+
             let clusters = state
                 .db
                 .get_spatial_clusters(&project_id, scene_name)
@@ -361,6 +438,15 @@ async fn execute_tool(
             let path = args["param_path"].as_str().ok_or("Missing param_path")?;
             let val = args["value"].clone();
 
+            if let Some(srv) = remote_server {
+                return http_post_json(
+                    srv,
+                    "/api/v1/live/tweak",
+                    &json!({ "path": path, "value": val }),
+                )
+                .await;
+            }
+
             let success = state.tweaker.tweak_var(path, val.clone()).await;
             Ok(format!(
                 "Zaktualizowano parametr '{}' do wartości: {}\nStatus wysyłki do gry: {}",
@@ -371,6 +457,11 @@ async fn execute_tool(
         }
         "gw_exec_console_cmd" => {
             let cmd = args["cmd"].as_str().ok_or("Missing cmd")?;
+
+            if let Some(srv) = remote_server {
+                return http_post_json(srv, "/api/v1/live/command", &json!({ "cmd": cmd })).await;
+            }
+
             let count = state.tweaker.send_command(cmd).await;
             Ok(format!(
                 "Wysłano komendę konsoli '{}' do {} aktywnych instancji gry.",
@@ -386,6 +477,11 @@ async fn execute_tool(
             let project_id = resolve_project_id(args["project_id"].as_str(), default_dir);
             let engine = args["target_engine"].as_str().unwrap_or("godot");
 
+            if let Some(srv) = remote_server {
+                let path = format!("/api/v1/shader_prewarm/{}?project_id={}", engine, project_id);
+                return http_get(srv, &path).await;
+            }
+
             let generator = ShaderPrewarmGenerator::new(state.db.clone());
             if engine == "unity" {
                 let code = generator
@@ -400,12 +496,21 @@ async fn execute_tool(
             }
         }
         "gw_cache_stats" => {
+            if let Some(srv) = remote_server {
+                return http_get(srv, "/api/v1/cas/stats").await;
+            }
+
             let stats = state.cas.stats().map_err(|e| e.to_string())?;
             Ok(serde_json::to_string_pretty(&stats).unwrap())
         }
         "gw_get_playtester_feedback" => {
             let project_id = resolve_project_id(args["project_id"].as_str(), default_dir);
             let limit = args["limit"].as_u64().unwrap_or(20) as u32;
+
+            if let Some(srv) = remote_server {
+                let path = format!("/api/v1/projects/{}/feedback", project_id);
+                return http_get(srv, &path).await;
+            }
 
             let feedback = state
                 .db

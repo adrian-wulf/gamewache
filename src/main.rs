@@ -52,6 +52,9 @@ enum Commands {
     Mcp {
         #[arg(short, long)]
         project_dir: Option<PathBuf>,
+        /// Adres zdalnego serwera GameWache na VPS (np. https://gamewache.social-wulf.eu lub GAMEWACHE_SERVER_URL)
+        #[arg(short, long)]
+        server: Option<String>,
     },
     /// Zarządzanie zdalnym magazynem pamięci podręcznej assetów (CAS)
     Cache {
@@ -134,9 +137,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     match cli.command {
-        Some(Commands::Mcp { project_dir }) => {
-            info!("Uruchamianie serwera MCP (STDIO)...");
-            mcp::run_mcp_stdio(app_state, project_dir).await?;
+        Some(Commands::Mcp { project_dir, server }) => {
+            let server = server.or_else(|| std::env::var("GAMEWACHE_SERVER_URL").ok());
+            if let Some(ref s) = server {
+                info!("Uruchamianie klienta MCP (STDIO) w trybie hybrydowym z VPS: {}...", s);
+            } else {
+                info!("Uruchamianie serwera MCP (STDIO) w trybie lokalnym...");
+            }
+            mcp::run_mcp_stdio(app_state, server, project_dir).await?;
         }
         Some(Commands::Audit { project_dir, prune }) => {
             info!("Rozpoczynanie audytu assetów w: {}", project_dir.display());
