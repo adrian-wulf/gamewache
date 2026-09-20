@@ -1,0 +1,16 @@
+services:
+  gamewache:
+    build: .
+    container_name: gamewache
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - PORT=8090
+      - HOST=0.0.0.0
+      - GAMEWACHE_DATA_DIR=/data
+    volumes:
+      - gamewache-data:/data
+
+volumes:
+  gamewache-data:

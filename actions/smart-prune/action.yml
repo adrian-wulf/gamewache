@@ -1,0 +1,43 @@
+name: 'GameWache Smart Prune for Game CI'
+description: 'Wycina zbędne zadania kompilacji assetów gier na podstawie analizy git diff (filozofia Blitzrunner dla silników gier)'
+author: 'Adrian Wulf <adrian@social-wulf.eu>'
+
+inputs:
+  base-ref:
+    description: 'Gałąź bazowa do porównania'
+    required: false
+    default: 'origin/main'
+
+outputs:
+  skip_asset_bake:
+    description: 'Prawda, jeśli zmieniono tylko skrypty i można pobrać cache z CAS'
+    value: ${{ steps.analyze.outputs.skip_asset_bake }}
+  only_docs:
+    description: 'Prawda, jeśli zmieniono tylko dokumentację'
+    value: ${{ steps.analyze.outputs.only_docs }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: analyze
+      shell: bash
+      run: |
+        DIFF=$(git diff --name-only ${{ inputs.base-ref }} HEAD || echo "")
+        echo "Zmienione pliki:"
+        echo "$DIFF"
+
+        ONLY_DOCS="true"
+        SKIP_ASSETS="true"
+
+        for FILE in $DIFF; do
+          if [[ ! "$FILE" =~ \.(md|txt|png)$ ]] && [[ ! "$FILE" =~ ^docs/ ]]; then
+            ONLY_DOCS="false"
+          fi
+          if [[ "$FILE" =~ ^assets/ ]] || [[ "$FILE" =~ \.(png|tga|wav|ogg|gltf|fbx|blend)$ ]]; then
+            SKIP_ASSETS="false"
+          fi
+        done
+
+        echo "only_docs=$ONLY_DOCS" >> $GITHUB_OUTPUT
+        echo "skip_asset_bake=$SKIP_ASSETS" >> $GITHUB_OUTPUT
+        echo "Wynik analizy: ONLY_DOCS=$ONLY_DOCS, SKIP_ASSET_BAKE=$SKIP_ASSETS"

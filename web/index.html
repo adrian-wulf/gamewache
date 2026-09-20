@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pl" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎮 GameWache — Autonomous GameOps Engine</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen flex flex-col">
+  <!-- Top Navigation Header -->
+  <header class="border-b border-gray-800 bg-gray-900/90 backdrop-blur sticky top-0 z-40 px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 p-2 rounded-lg font-mono font-bold text-xl flex items-center gap-2">
+        <span>🛡️</span>
+        <span>GameWache</span>
+      </div>
+      <span class="text-xs font-mono uppercase tracking-wider bg-gray-800 text-gray-400 px-2 py-1 rounded border border-gray-700">v0.1.0 Alpha</span>
+      <div class="flex items-center gap-2 ml-4">
+        <label for="projectSelect" class="text-xs text-gray-400 font-mono">Projekt:</label>
+        <select id="projectSelect" class="bg-gray-950 border border-gray-700 rounded px-2.5 py-1 text-sm text-gray-200 focus:outline-none focus:border-amber-500 font-mono">
+          <option value="panzer-hookandshoot">panzer-hookandshoot</option>
+          <option value="demo-game">demo-game</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex items-center gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800 text-xs font-mono font-medium">
+      <button data-tab="crashes" class="nav-tab active">⚠️ Crashes (<span id="crashCountBadge">0</span>)</button>
+      <button data-tab="replay" class="nav-tab">📼 Blackbox Replay</button>
+      <button data-tab="spatial" class="nav-tab">🗺️ Spatial Map</button>
+      <button data-tab="tuning" class="nav-tab">🎛️ Live Tuning</button>
+      <button data-tab="shaders" class="nav-tab">⚡ Shaders</button>
+      <button data-tab="assets" class="nav-tab">🧹 Assets & Cache</button>
+      <button data-tab="feedback" class="nav-tab">📬 Playtest F11</button>
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <div id="wsStatus" class="flex items-center gap-1.5 text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>WebSocket Live</span>
+      </div>
+      <button id="refreshBtn" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded text-xs font-mono border border-gray-700 transition">Odśwież</button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 p-6 max-w-7xl w-full mx-auto">
+    <!-- TAB 1: CRASHES -->
+    <section id="tab-crashes" class="tab-pane active space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Incydenty i Awarie Silnika</h1>
+          <p class="text-xs text-gray-400 mt-0.5">Zgłoszenia awarii zdeduplikowane po sygnaturze (fingerprint) ze wsparciem GDScript, C# i natywnych sygnałów.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="text" id="crashSearch" placeholder="Filtruj błędy..." class="bg-gray-900 border border-gray-700 rounded px-3 py-1.5 text-xs font-mono text-gray-200 focus:outline-none focus:border-amber-500 w-64">
+        </div>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-gray-950/80 text-gray-400 font-mono uppercase tracking-wider border-b border-gray-800">
+            <tr>
+              <th class="p-3 w-16">ID</th>
+              <th class="p-3">Wyjątek / Błąd</th>
+              <th class="p-3">Lokalizacja</th>
+              <th class="p-3">Scena</th>
+              <th class="p-3 w-20 text-center">Wystąpienia</th>
+              <th class="p-3 w-24">Platforma</th>
+              <th class="p-3 w-32">Ostatnio</th>
+              <th class="p-3 w-28 text-right">Akcja</th>
+            </tr>
+          </thead>
+          <tbody id="crashesTableBody" class="divide-y divide-gray-800/60 font-mono">
+            <!-- Dynamic rows -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 2: REPLAY BLACKBOX PLAYER -->
+    <section id="tab-replay" class="tab-pane hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Odtwarzacz Czarnej Skrzynki (Blackbox Replay)</h1>
+          <p class="text-xs text-gray-400 mt-0.5">Deterministyczny podgląd ostatnich sekund wejść gracza przed wystąpieniem awarii.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="replaySelector" class="bg-gray-900 border border-gray-700 rounded px-3 py-1.5 text-xs font-mono text-gray-200">
+            <option value="">Wybierz powtórkę...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Replay Visualizer & Virtual Gamepad -->
+        <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+            <div class="flex items-center gap-2 font-mono text-sm">
+              <span class="text-amber-400 font-bold">TICK: <span id="currentTickDisplay">0</span></span>
+              <span class="text-gray-500">|</span>
+              <span class="text-gray-300">Czas: <span id="currentTimeDisplay">0.00s</span></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btnStepBack" class="btn-ctrl">⏮️ -1 Klatka</button>
+              <button id="btnPlayPause" class="btn-ctrl bg-amber-500/20 text-amber-300 border-amber-500/40">▶️ Odtwórz</button>
+              <button id="btnStepForward" class="btn-ctrl">⏭️ +1 Klatka</button>
+            </div>
+          </div>
+
+          <!-- Timeline Scrubber -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-[11px] font-mono text-gray-500">
+              <span>-30s (Start bufora)</span>
+              <span class="text-red-400 font-bold">0s (CRASH)</span>
+            </div>
+            <input type="range" id="replayScrubber" min="0" max="100" value="0" class="w-full h-2 bg-gray-950 rounded-lg appearance-none cursor-pointer accent-amber-500">
+          </div>
+
+          <!-- Virtual Gamepad / Inputs View -->
+          <div class="bg-gray-950 border border-gray-800 rounded-lg p-4 flex flex-col items-center justify-center min-h-[220px]">
+            <div class="text-xs font-mono text-gray-400 mb-3">Wirtualny Kontroler & Klawiatura w Ramce</div>
+            <div class="flex items-center gap-8">
+              <!-- Analog Stick Left -->
+              <div class="flex flex-col items-center">
+                <div class="w-24 h-24 rounded-full border-2 border-dashed border-gray-700 relative flex items-center justify-center">
+                  <div id="stickL" class="w-6 h-6 rounded-full bg-amber-500 shadow-lg shadow-amber-500/50 absolute transition-all duration-75"></div>
+                </div>
+                <span class="text-[11px] font-mono text-gray-400 mt-2">Lewy Drążek (Ruch)</span>
+              </div>
+
+              <!-- Digital Actions -->
+              <div class="grid grid-cols-2 gap-2 font-mono text-xs">
+                <div id="btnAction1" class="input-badge">MOVE_UP</div>
+                <div id="btnAction2" class="input-badge">DASH</div>
+                <div id="btnAction3" class="input-badge">PRIMARY_FIRE</div>
+                <div id="btnAction4" class="input-badge">SPECIAL_SKILL</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Snapshot Metadata & State Inspector -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4 font-mono text-xs">
+          <h2 class="font-bold text-sm text-gray-200 border-b border-gray-800 pb-2">Stan Klatki Kluczowej (Snapshot)</h2>
+          <div id="snapshotData" class="text-gray-300 space-y-2">
+            <p class="text-gray-500 italic">Załaduj powtórkę z listy, aby podejrzeć stan świata.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: SPATIAL MAP (2D/3D HEATMAP) -->
+    <section id="tab-spatial" class="tab-pane hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Przestrzenna Mapa Awarii i Zgonów</h1>
+          <p class="text-xs text-gray-400 mt-0.5">Wizualizacja klastrów geometrycznych na poziomach gry — detekcja dziur w siatkach kolizyjnych.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-xs font-mono text-gray-400">Poziom:</label>
+          <input type="text" id="spatialSceneInput" value="res://scenes/levels/level_01.tscn" class="bg-gray-900 border border-gray-700 rounded px-3 py-1 text-xs font-mono text-gray-200 w-64">
+          <button id="btnLoadSpatial" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 rounded text-xs font-mono transition">Generuj Mapę</button>
+        </div>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col items-center justify-center">
+        <canvas id="spatialCanvas" width="900" height="500" class="bg-gray-950 border border-gray-800 rounded-lg shadow-inner"></canvas>
+        <div class="flex items-center justify-between w-full mt-3 px-2 text-xs font-mono text-gray-400">
+          <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500/80"></span> Pojedynczy incydent</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500/80"></span> Klaster (2-5 awarii)</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500/80"></span> Śmiertelna dziura (>5 awarii)</span>
+          </div>
+          <div>Kliknij punkt na mapie, aby otworzyć szczegóły awarii.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: LIVE TUNING -->
+    <section id="tab-tuning" class="tab-pane hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Live Parameter Tweaker & Remote Console</h1>
+          <p class="text-xs text-gray-400 mt-0.5">Strojenie zmiennych fizyki, balansu i broni w działającej grze przez kanał WebSocket.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="text" id="consoleCmdInput" placeholder="Wpisz komendę (np. god_mode true, teleport 10 20)..." class="bg-gray-900 border border-gray-700 rounded px-3 py-1.5 text-xs font-mono text-gray-200 w-80">
+          <button id="btnSendCmd" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-mono transition">Wyślij Komendę</button>
+        </div>
+      </div>
+
+      <div id="tweakerSlidersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Dynamic Sliders -->
+        <div class="col-span-full bg-gray-900 border border-gray-800 rounded-xl p-8 text-center text-gray-500 font-mono text-xs">
+          Oczekiwanie na połączenie gry z endpointem <code>ws://localhost:8090/ws/live_tuning</code>...
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: SHADERS -->
+    <section id="tab-shaders" class="tab-pane hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Shader Stutter Tracker & Pre-warm</h1>
+          <p class="text-xs text-gray-400 mt-0.5">Analiza zacięć kompilacji potoków GPU i generator skryptu rozgrzewającego na ekranie ładowania.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnGeneratePrewarmGodot" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded text-xs font-mono transition">⚡ Generuj shader_prewarm.gd</button>
+          <button id="btnGeneratePrewarmUnity" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded text-xs font-mono transition">Generuj ShaderPrewarm.cs</button>
+        </div>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
+        <table class="w-full text-left text-xs font-mono">
+          <thead class="bg-gray-950/80 text-gray-400 uppercase tracking-wider border-b border-gray-800">
+            <tr>
+              <th class="p-3">Ścieżka Shadera</th>
+              <th class="p-3 w-28 text-center">Maks. Hitch (ms)</th>
+              <th class="p-3 w-28 text-center">Śr. Hitch (ms)</th>
+              <th class="p-3 w-24 text-center">Wystąpienia</th>
+              <th class="p-3">Karta Graficzna / Sterownik</th>
+              <th class="p-3 w-32">Ostatnio</th>
+            </tr>
+          </thead>
+          <tbody id="shadersTableBody" class="divide-y divide-gray-800/60">
+            <!-- Dynamic rows -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 6: ASSETS & CACHE -->
+    <section id="tab-assets" class="tab-pane hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 font-mono">
+          <div class="text-xs text-gray-400">Cache Hit Ratio</div>
+          <div id="statCasRatio" class="text-2xl font-bold text-emerald-400 mt-1">94.8%</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">Trafienia zdeduplikowane Blake3</div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 font-mono">
+          <div class="text-xs text-gray-400">Rozmiar Magazynu CAS</div>
+          <div id="statCasSize" class="text-2xl font-bold text-blue-400 mt-1">0 MB</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">Kompresja Zstandard zstd</div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 font-mono">
+          <div class="text-xs text-gray-400">Sieroce Assety (Bloat)</div>
+          <div id="statOrphanBytes" class="text-2xl font-bold text-amber-400 mt-1">0 MB</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">Zbędne pliki do wycięcia</div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 font-mono">
+          <div class="text-xs text-gray-400">Uratowany Czas CI</div>
+          <div class="text-2xl font-bold text-purple-400 mt-1">3.4 godz.</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">W przeliczeniu na minuty GitHub</div>
+        </div>
+      </div>
+
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+          <div>
+            <h2 class="font-bold text-sm text-gray-200">Wykrywacz Sierocych Assetów (Orphan Asset Hunter)</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Skaner drzewa zależności (DAG) wyłapujący pliki na dysku niepowiązane z żadną sceną.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="text" id="auditPathInput" value="." class="bg-gray-950 border border-gray-700 rounded px-3 py-1 text-xs font-mono text-gray-200 w-48">
+            <button id="btnRunAudit" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 rounded text-xs font-mono transition">Uruchom Audyt</button>
+          </div>
+        </div>
+
+        <div id="auditResults" class="font-mono text-xs text-gray-300">
+          <p class="text-gray-500 italic">Wpisz ścieżkę do projektu gry i kliknij "Uruchom Audyt".</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: PLAYTEST FEEDBACK -->
+    <section id="tab-feedback" class="tab-pane hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Skrzynka Zgłoszeń Playtestów (Klawisz F11)</h1>
+          <p class="text-xs text-gray-400 mt-0.5">Zrzuty ekranu, powiązane powtórki wejść i opisy problemów nadesłane bezpośrednio z gry.</p>
+        </div>
+      </div>
+
+      <div id="feedbackGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 font-mono text-xs">
+        <!-- Dynamic feedback cards -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Crash Details Modal -->
+  <div id="crashModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-6">
+    <div class="bg-gray-900 border border-gray-700 rounded-xl max-w-4xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="p-4 border-b border-gray-800 flex items-center justify-between bg-gray-950">
+        <h2 id="modalCrashTitle" class="font-mono font-bold text-amber-400 text-sm truncate">Szczegóły Incydentu</h2>
+        <button id="btnModalClose" class="text-gray-400 hover:text-white font-mono text-lg px-2">✕</button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-4 font-mono text-xs">
+        <div id="modalCrashMetadata" class="grid grid-cols-2 md:grid-cols-4 gap-2 bg-gray-950 p-3 rounded border border-gray-800 text-gray-300"></div>
+        <div>
+          <h3 class="font-bold text-gray-400 uppercase text-[11px] mb-1">Stos Wywołań (Callstack):</h3>
+          <pre id="modalStacktrace" class="bg-gray-950 p-3 rounded border border-gray-800 text-red-300 overflow-x-auto whitespace-pre leading-relaxed"></pre>
+        </div>
+        <div>
+          <h3 class="font-bold text-gray-400 uppercase text-[11px] mb-1">Ostatnie Breadcrumbs (Okruchy Chleba):</h3>
+          <div id="modalBreadcrumbs" class="space-y-1 bg-gray-950 p-3 rounded border border-gray-800"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

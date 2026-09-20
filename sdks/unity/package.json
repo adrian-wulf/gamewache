@@ -1,0 +1,19 @@
+{
+  "name": "com.gamewache.sdk",
+  "version": "0.1.0",
+  "displayName": "GameWache SDK",
+  "description": "Autonomous GameOps: Crash Sentinel, Deterministic Blackbox Replay, Remote CAS & Live Tweaker for Unity",
+  "unity": "2022.3",
+  "author": {
+    "name": "Adrian Wulf",
+    "email": "adrian@social-wulf.eu",
+    "url": "https://social-wulf.eu"
+  },
+  "keywords": [
+    "crash",
+    "telemetry",
+    "replay",
+    "gamedev",
+    "cache"
+  ]
+}
