@@ -103,6 +103,8 @@ enum CacheCommands {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
+        .with_writer(std::io::stderr)
+        .with_ansi(false)
         .finish();
     let _ = tracing::subscriber::set_global_default(subscriber);
 
