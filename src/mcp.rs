@@ -130,15 +130,14 @@ fn get_tool_definitions() -> Vec<Value> {
     vec![
         json!({
             "name": "gw_query_crashes",
-            "description": "Wyszukuje i filtruje listę ostatnich awarii oraz wyjątków w silniku gry.",
+            "description": "Wyszukuje i filtruje listę ostatnich awarii oraz wyjątków w silniku gry (project_id opcjonalne, auto-detekcja z aktywnego projektu).",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "project_id": { "type": "string", "description": "ID projektu gry" },
+                    "project_id": { "type": "string", "description": "Opcjonalne ID projektu gry (domyślnie aktywny katalog)" },
                     "scene_name": { "type": "string", "description": "Opcjonalna nazwa sceny" },
                     "limit": { "type": "integer", "description": "Maksymalna liczba wyników (domyślnie 10)" }
-                },
-                "required": ["project_id"]
+                }
             }
         }),
         json!({
@@ -267,6 +266,47 @@ fn get_tool_definitions() -> Vec<Value> {
     ]
 }
 
+fn resolve_project_dir(args_val: Option<&str>, default_dir: Option<&Path>) -> PathBuf {
+    if let Some(d) = args_val {
+        if !d.trim().is_empty() {
+            return PathBuf::from(d.trim());
+        }
+    }
+    if let Some(d) = default_dir {
+        return d.to_path_buf();
+    }
+    std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+}
+
+fn resolve_project_id(args_val: Option<&str>, default_dir: Option<&Path>) -> String {
+    if let Some(p) = args_val {
+        if !p.trim().is_empty() {
+            return p.trim().to_string();
+        }
+    }
+
+    let pdir = resolve_project_dir(None, default_dir);
+    let godot_cfg = pdir.join("project.godot");
+    if godot_cfg.exists() {
+        if let Ok(content) = std::fs::read_to_string(&godot_cfg) {
+            for line in content.lines() {
+                if line.contains("config/name=") {
+                    let parts: Vec<&str> = line.split('=').collect();
+                    if parts.len() > 1 {
+                        let name = parts[1].trim().trim_matches('"');
+                        return name.to_lowercase().replace(' ', "-");
+                    }
+                }
+            }
+        }
+    }
+
+    pdir.file_name()
+        .and_then(|f| f.to_str())
+        .unwrap_or("default-game")
+        .to_string()
+}
+
 async fn execute_tool(
     state: &Arc<AppState>,
     name: &str,
@@ -275,13 +315,13 @@ async fn execute_tool(
 ) -> Result<String, String> {
     match name {
         "gw_query_crashes" => {
-            let project_id = args["project_id"].as_str().ok_or("Missing project_id")?;
+            let project_id = resolve_project_id(args["project_id"].as_str(), default_dir);
             let scene = args["scene_name"].as_str();
             let limit = args["limit"].as_u64().unwrap_or(10) as u32;
 
             let crashes = state
                 .db
-                .list_crashes(project_id, scene, limit)
+                .list_crashes(&project_id, scene, limit)
                 .map_err(|e| e.to_string())?;
 
             Ok(serde_json::to_string_pretty(&crashes).unwrap())
@@ -307,12 +347,12 @@ async fn execute_tool(
             Ok(serde_json::to_string_pretty(&replay).unwrap())
         }
         "gw_spatial_hotspots" => {
-            let project_id = args["project_id"].as_str().ok_or("Missing project_id")?;
+            let project_id = resolve_project_id(args["project_id"].as_str(), default_dir);
             let scene_name = args["scene_name"].as_str().ok_or("Missing scene_name")?;
 
             let clusters = state
                 .db
-                .get_spatial_clusters(project_id, scene_name)
+                .get_spatial_clusters(&project_id, scene_name)
                 .map_err(|e| e.to_string())?;
 
             Ok(serde_json::to_string_pretty(&clusters).unwrap())
@@ -338,29 +378,23 @@ async fn execute_tool(
             ))
         }
         "gw_audit_assets" => {
-            let dir_str = args["project_dir"].as_str();
-            let pdir = match (dir_str, default_dir) {
-                (Some(d), _) => PathBuf::from(d),
-                (None, Some(d)) => d.to_path_buf(),
-                (None, None) => return Err("Brak określonego katalogu projektu (project_dir)".to_string()),
-            };
-
+            let pdir = resolve_project_dir(args["project_dir"].as_str(), default_dir);
             let report = AssetAuditor::audit(&pdir).map_err(|e| e.to_string())?;
             Ok(serde_json::to_string_pretty(&report).unwrap())
         }
         "gw_generate_shader_prewarm" => {
-            let project_id = args["project_id"].as_str().ok_or("Missing project_id")?;
+            let project_id = resolve_project_id(args["project_id"].as_str(), default_dir);
             let engine = args["target_engine"].as_str().unwrap_or("godot");
 
             let generator = ShaderPrewarmGenerator::new(state.db.clone());
             if engine == "unity" {
                 let code = generator
-                    .generate_unity_script(project_id)
+                    .generate_unity_script(&project_id)
                     .map_err(|e| e.to_string())?;
                 Ok(code)
             } else {
                 let code = generator
-                    .generate_godot_script(project_id)
+                    .generate_godot_script(&project_id)
                     .map_err(|e| e.to_string())?;
                 Ok(code)
             }
@@ -370,22 +404,18 @@ async fn execute_tool(
             Ok(serde_json::to_string_pretty(&stats).unwrap())
         }
         "gw_get_playtester_feedback" => {
-            let project_id = args["project_id"].as_str().ok_or("Missing project_id")?;
+            let project_id = resolve_project_id(args["project_id"].as_str(), default_dir);
             let limit = args["limit"].as_u64().unwrap_or(20) as u32;
 
             let feedback = state
                 .db
-                .list_feedback(project_id, limit)
+                .list_feedback(&project_id, limit)
                 .map_err(|e| e.to_string())?;
 
             Ok(serde_json::to_string_pretty(&feedback).unwrap())
         }
         "gw_run_headless_tests" => {
-            let pdir = args["project_dir"]
-                .as_str()
-                .map(PathBuf::from)
-                .or_else(|| default_dir.map(|d| d.to_path_buf()))
-                .ok_or("Brak project_dir")?;
+            let pdir = resolve_project_dir(args["project_dir"].as_str(), default_dir);
 
             let mut cmd = Command::new("godot");
             cmd.arg("--headless");
@@ -409,13 +439,13 @@ async fn execute_tool(
             ))
         }
         "gw_deploy_web_playtest" => {
-            let project_id = args["project_id"].as_str().ok_or("Missing project_id")?;
+            let project_id = resolve_project_id(args["project_id"].as_str(), default_dir);
             let channel = args["channel"].as_str().ok_or("Missing channel")?;
             let build_dir = args["build_dir"].as_str().ok_or("Missing build_dir")?;
 
             let token = state
                 .wasm_host
-                .deploy_build(project_id, channel, Path::new(build_dir))
+                .deploy_build(&project_id, channel, Path::new(build_dir))
                 .map_err(|e| e.to_string())?;
 
             Ok(format!(
