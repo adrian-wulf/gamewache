@@ -22,7 +22,7 @@ mod web;
 
 #[derive(Parser)]
 #[command(name = "gamewache")]
-#[command(author = "Adrian Wulf <adrian@social-wulf.eu>")]
+#[command(author = "Adrian Wulf <kontakt@wulf-code.eu>")]
 #[command(version = "0.1.0")]
 #[command(about = "Autonomous GameOps: Crash Sentinel, Deterministic Replay Blackbox, Remote CAS & AI MCP", long_about = None)]
 struct Cli {
@@ -52,7 +52,7 @@ enum Commands {
     Mcp {
         #[arg(short, long)]
         project_dir: Option<PathBuf>,
-        /// Adres zdalnego serwera GameWache na VPS (np. https://gamewache.social-wulf.eu lub GAMEWACHE_SERVER_URL)
+        /// Adres zdalnego serwera GameWache na VPS (np. https://gamewache.example.com lub GAMEWACHE_SERVER_URL)
         #[arg(short, long)]
         server: Option<String>,
     },

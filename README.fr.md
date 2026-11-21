@@ -79,7 +79,7 @@ GameWache est 100% logiciel libre et open source sous licence MIT.
 
 ## ⚖️ Mentions Légales & Licence (§ 5 DDG / MIT)
 
-* **Développeur / Auteur :** Adrian Wulf ([https://github.com/adrian-wulf](https://github.com/adrian-wulf), [https://social-wulf.eu](https://social-wulf.eu)).
+* **Développeur / Auteur :** Adrian Wulf ([https://github.com/adrian-wulf](https://github.com/adrian-wulf), [https://wulf-code.eu](https://wulf-code.eu)).
 * **Licence :** MIT License. Consultez [LICENSE](LICENSE) pour plus d'informations.
 
 ---

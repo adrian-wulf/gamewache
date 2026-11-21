@@ -2,7 +2,7 @@
 name = "gamewache"
 version = "0.1.0"
 edition = "2024"
-authors = ["Adrian Wulf <adrian@social-wulf.eu>"]
+authors = ["Adrian Wulf <kontakt@wulf-code.eu>"]
 description = "Autonomous GameOps: Crash Sentinel, Deterministic Replay Blackbox, Remote CAS & AI MCP"
 license = "MIT"
 
