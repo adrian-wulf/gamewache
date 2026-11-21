@@ -74,10 +74,9 @@ GameWache jest częścią rodziny niezależnych narzędzi inżynieryjnych tworzo
 | Usługa / Projekt | Live URL | Przeznaczenie |
 | :--- | :---: | :--- |
 | 🎮 **GameWache** | [github.com/adrian-wulf/gamewache](https://github.com/adrian-wulf/gamewache) | **Autonomiczny GameOps Engine:** Crash Sentinel, Replay Blackbox, Remote CAS i AI MCP Server. |
-| 🛡️ **Nachtwache** | [sentry.social-wulf.eu](https://sentry.social-wulf.eu) | **Lekki strażnik błędów:** Drop-in Sentry w pojedynczej binarce Rust (~15 MB RAM) z AI Auto-Fix ([GitHub](https://github.com/adrian-wulf/nachtwache)). |
+| 🛡️ **Nachtwache** | [adrian-wulf/nachtwache](https://github.com/adrian-wulf/nachtwache) | **Lekki strażnik błędów:** Drop-in Sentry w pojedynczej binarce Rust (~15 MB RAM) z AI Auto-Fix ([GitHub](https://github.com/adrian-wulf/nachtwache)). |
 | ⚡ **BlitzRunner** | [github.com/adrian-wulf/blitzrunner](https://github.com/adrian-wulf/blitzrunner) | **Optymalizator CI Zero-Server:** Analiza git diff i akceleracja buildów na Hetzner Bare-Metal. |
-| 🚀 **Wulf Lead.er** | [lead.social-wulf.eu](https://lead.social-wulf.eu) | **Radar B2B Lead Intelligence & Audytor WWW:** Prospekcja przez OpenStreetMap, audyty SSL/TTFB i Gemini OSINT ([GitHub](https://github.com/adrian-wulf/wulf-lead-er)). |
-| 🌐 **Central Wulf Hub** | [social-wulf.eu](https://social-wulf.eu) | **Główny portal ekosystemu:** Portfolio projektów i centrum suwerenności programistycznej. |
+| 🌐 **Central Wulf Hub** | [wulf-code.eu](https://wulf-code.eu) | **Główny portal ekosystemu:** Portfolio projektów i centrum suwerenności programistycznej. |
 | 💼 **Wulf Code** | [wulf-code.it](https://wulf-code.it) | **Software House & Consulting:** Architektura systemów wysokiej wydajności i audyty bezpieczeństwa. |
 
 ---
@@ -382,7 +381,7 @@ Tworzenie gier to twardy kawałek chleba. Niezależni twórcy nie powinni być z
 
 ### Informacja zgodnie z § 5 niemieckiej ustawy o usługach cyfrowych (DDG):
 * **Twórca / Autor:** Adrian Wulf
-* **Kontakt:** Dostępny na GitHubie: [https://github.com/adrian-wulf](https://github.com/adrian-wulf) oraz przez portal [https://social-wulf.eu](https://social-wulf.eu) / [https://wulf-code.it](https://wulf-code.it).
+* **Kontakt:** Dostępny na GitHubie: [https://github.com/adrian-wulf](https://github.com/adrian-wulf) oraz przez portal [https://wulf-code.eu](https://wulf-code.eu) / [https://wulf-code.it](https://wulf-code.it).
 
 ### Wyłączenie odpowiedzialności & Licencja MIT:
 Oprogramowanie dostarczane jest w stanie "TAK JAK JEST" (AS IS), bez jakiejkolwiek gwarancji. Szczegółowe postanowienia znajdują się w pliku [LICENSE](LICENSE).

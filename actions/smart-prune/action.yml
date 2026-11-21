@@ -1,6 +1,6 @@
 name: 'GameWache Smart Prune for Game CI'
 description: 'Wycina zbędne zadania kompilacji assetów gier na podstawie analizy git diff (filozofia Blitzrunner dla silników gier)'
-author: 'Adrian Wulf <adrian@social-wulf.eu>'
+author: 'Adrian Wulf <kontakt@wulf-code.eu>'
 
 inputs:
   base-ref:

@@ -74,10 +74,9 @@ GameWache is an integral part of an independent suite of developer and business 
 | Service / Project | Live URL | Purpose |
 | :--- | :---: | :--- |
 | 🎮 **GameWache** | [github.com/adrian-wulf/gamewache](https://github.com/adrian-wulf/gamewache) | **Autonomous GameOps Engine:** Crash Sentinel, Blackbox Replay, Remote CAS, and AI MCP Server. |
-| 🛡️ **Nachtwache** | [sentry.social-wulf.eu](https://sentry.social-wulf.eu) | **Autonomous Error Tracker & Sentry Replacement:** Single Rust binary, ~15 MB RAM, SQLite WAL, and built-in AI Auto-Fix ([GitHub](https://github.com/adrian-wulf/nachtwache)). |
+| 🛡️ **Nachtwache** | [adrian-wulf/nachtwache](https://github.com/adrian-wulf/nachtwache) | **Autonomous Error Tracker & Sentry Replacement:** Single Rust binary, ~15 MB RAM, SQLite WAL, and built-in AI Auto-Fix ([GitHub](https://github.com/adrian-wulf/nachtwache)). |
 | ⚡ **BlitzRunner** | [github.com/adrian-wulf/blitzrunner](https://github.com/adrian-wulf/blitzrunner) | **Zero-Server CI Optimizer & Ephemeral Bare-Metal Runner:** Cuts CI costs by 90% and accelerates builds 4x on disposable cloud compute. |
-| 🚀 **Wulf Lead.er** | [lead.social-wulf.eu](https://lead.social-wulf.eu) | **B2B Lead Intelligence Radar & Web Auditor:** Local prospecting via OpenStreetMap, technical audits (SSL, TTFB, RWD), and Gemini OSINT ([GitHub](https://github.com/adrian-wulf/wulf-lead-er)). |
-| 🌐 **Central Wulf Hub** | [social-wulf.eu](https://social-wulf.eu) | **Main Ecosystem Showcase:** Technology portfolio and developer sovereignty portal by Adrian Wulf. |
+| 🌐 **Central Wulf Hub** | [wulf-code.eu](https://wulf-code.eu) | **Main Ecosystem Showcase:** Technology portfolio and developer sovereignty portal by Adrian Wulf. |
 | 💼 **Wulf Code** | [wulf-code.it](https://wulf-code.it) | **Software House & Consulting:** High-performance infrastructure, game systems, and security audits. |
 
 ---
@@ -383,7 +382,7 @@ Game development is already high-risk and grueling. Indie teams shouldn't be pen
 
 ### Information pursuant to § 5 German Digital Services Act (DDG):
 * **Developer / Author:** Adrian Wulf
-* **Contact:** Available via GitHub: [https://github.com/adrian-wulf](https://github.com/adrian-wulf) and portal [https://social-wulf.eu](https://social-wulf.eu) / [https://wulf-code.it](https://wulf-code.it).
+* **Contact:** Available via GitHub: [https://github.com/adrian-wulf](https://github.com/adrian-wulf) and portal [https://wulf-code.eu](https://wulf-code.eu) / [https://wulf-code.it](https://wulf-code.it).
 
 ### Disclaimer & MIT License:
 GameWache is distributed under the **MIT License**. The software is provided "AS IS", without warranty of any kind, express or implied. See [LICENSE](LICENSE) for full details.
